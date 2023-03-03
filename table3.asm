@@ -13,8 +13,20 @@ start:
 	push ax
 	xor bx, bx
 	xor cx, cx
-	add si, 10h
+	cmp ax, 0h
+	jne @@NotUserStyle
+	mov di, offset Styles
+	mov cx, 9d
 
+@@Reading:
+	mov al, [si]
+	inc si
+	mov byte ptr [di], al
+	inc di 
+	loop @@Reading
+
+@@NotUserStyle:
+	inc si
 	push si
 	call ReadText
 	pop si
@@ -39,7 +51,9 @@ start:
 	dec ah
 	dec al
 
+	push si
 	call DrawTable
+	pop si
 	pop ax
 
 	mov bl, ah 	
@@ -283,9 +297,6 @@ DrawTable 	proc
 	push ax 				; counting style
 	push bx
 
-	cmp ch, 00h 				
-	je @@UserStyle 				 
-
 	xor ax, ax
 	mov al, ch
 	mov ah, 9
@@ -296,9 +307,6 @@ DrawTable 	proc
 	mov curStyle, ax
 	pop bx
 	pop ax
-
-@@UserStyle:
-	mov curStyle, 84h
 
 	xor ch, ch
 	push cx 				; save color 
@@ -375,19 +383,34 @@ DrawLine 	proc
 ; From ascii to hex
 ;------------------------------------------------
 ; Entry: si = address
-; Exit: ax = number
-; Destroys:
+; Exit: ax = number, si = skipped the number
+; Destroys: bx 
 ;------------------------------------------------
 ASCIItoHex 	proc
 
-	lodsb
-	mov ah, al
-	sub ah, 30h
-	shl ax, 4
-	lodsb
-	sub al, 30h
-	xchg al, ah
-	add al, ah
+	mov cx, 2
+	xor ax, ax
+
+@@Main:
+	mov bl, ds:[si]
+	inc si
+	cmp  bl, 97d
+	jae @@letter
+	sub bl, 30h
+	jmp @@countinue
+
+@@letter:
+	sub bl, 87d 				; small letters 
+
+@@countinue:
+	cmp cx, 1
+	je @@lastNumber 			; last number dont need to mul on 16
+
+	shl bx, 4
+
+@@lastNumber:
+	add ax, bx
+	loop @@Main
 
 	ret
 	endp
