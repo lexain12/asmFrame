@@ -24,9 +24,10 @@ start:
 	mov byte ptr [di], al
 	inc di 
 	loop @@Reading
+	inc si
 
 @@NotUserStyle:
-	inc si
+
 	push si
 	call ReadText
 	pop si
